@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 import { useAuthContext } from "@context/AuthProvider";
 import { EMAIL_ADDRESS_REGEX } from "@utils/constants";
@@ -16,8 +15,6 @@ import Input from "@components/Common/Input/Input";
 const Home = () => {
   const [loading, setIsLoading] = useState(false);
 
-  const router = useRouter();
-
   const defaultValues = {
     email: "",
     password: "",
@@ -31,7 +28,7 @@ const Home = () => {
     ...defaultValues,
   });
 
-  const { setToken } = useAuthContext();
+  const { login } = useAuthContext();
 
   /**
    * Handle Joke Update
@@ -71,12 +68,9 @@ const Home = () => {
         "A minimum of 4 characters are required!"
       );
 
-    setToken(
-      JSON.stringify(Math.floor(Math.random() * Date.now()).toString(36))
-    );
+    login();
 
     alertSuccess("Login Successfull");
-    router.push("/");
     setIsLoading(false);
   };
 

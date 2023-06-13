@@ -16,7 +16,7 @@ import TableCell from "./Common/Table/TableCell";
 import Loader from "./Common/Loader";
 import { formatShort } from "@utils/dateTimeHelper";
 import { maskEmail } from "@utils/maskEmail";
-import Search from "./Common/Search";
+import Filter from "./Common/Filter";
 import Button from "./Common/Button/Button";
 import { useRouter } from "next/navigation";
 
@@ -51,18 +51,43 @@ const ListJokes = () => {
   const [limit, setLimit] = useState(10);
 
   /**
-   * Search
+   * Filter by
    */
-  const [searchValue, setSearchValue] = useState("");
+  const [filterby, setFilterBy] = useState("");
 
-  const { data, isLoading, error } = useFetch<JokeProps[]>(
+  /**
+   * Filter
+   */
+  const [filterValue, setFilterValue] = useState<string>("");
+
+  /**
+   * Enable filter
+   */
+  const [enableFilter, setEnableFilter] = useState<boolean>(false);
+
+  const { data, isLoading } = useFetch<JokeProps[]>(
     `/api/jokes?page=${page}&limit=${limit}`,
-    ["jokes", `${page}`, `${limit}`]
+    ["jokes", `${page}`, `${limit}`],
+    {
+      enabled: !enableFilter,
+    }
+  );
+
+  const { data: filterData, isLoading: isLoadingFilter } = useFetch<
+    JokeProps[]
+  >(
+    `/api/jokes/filter?Views=${Number(filterValue)}`,
+    ["jokes", `${filterValue}`],
+    {
+      enabled: enableFilter,
+    }
   );
 
   // Get QueryClient from the context
   const queryClient = useQueryClient();
 
+  const invalidateQuery = () =>
+    queryClient.invalidateQueries({ queryKey: ["jokes"] });
   /**
    * Jokes lost
    */
@@ -72,26 +97,29 @@ const ListJokes = () => {
     data: JokeProps[],
     sortValue: "Views" | "CreatedAt"
   ) => {
-    const sorted = [...data].sort((a, b) => {
-      const valueA = a[`${sortValue}`] ?? a[`${sortValue.toLowerCase()}`];
-      const valueB = b[`${sortValue}`] ?? b[`${sortValue.toLowerCase()}`];
-
-      return Number(valueB ?? 0) - Number(valueA ?? 0);
-    });
+    const sorted = [...data].sort(
+      (a, b) => Number(b[`${sortValue}`] ?? 0) - Number(a[`${sortValue}`] ?? 0)
+    );
 
     setJokesList(() => sorted);
   };
 
   useEffect(() => {
-    setJokesList(data ?? []);
-  }, [data]);
+    if (filterby && filterValue) {
+      setJokesList(filterData ?? []);
+    } else {
+      setEnableFilter(false);
+      setJokesList(data ?? []);
+      setFilterValue("");
+    }
+  }, [data, filterData, filterby, filterValue]);
 
   /**
    * Handle next page
    */
   const handleNext = () => {
     // Invalidate and refetch
-    queryClient.invalidateQueries({ queryKey: ["jokes"] });
+    invalidateQuery();
     setPage((prev) => prev + 1);
   };
 
@@ -100,14 +128,17 @@ const ListJokes = () => {
    */
   const handlePrevious = () => {
     // Invalidate and refetch
-    queryClient.invalidateQueries({ queryKey: ["jokes"] });
+    invalidateQuery();
     if (page === 1) return;
     setPage((prev) => prev - 1);
   };
 
-  const onSearch = (val: string) => {
-    console.log({ val });
-    setSearchValue(val);
+  const onFilter = (val: string) => {
+    setEnableFilter(true);
+    if (val) {
+      setFilterValue(val);
+      invalidateQuery();
+    }
   };
 
   const handleChange = (searchVal: "Views" | "CreatedAt") =>
@@ -120,7 +151,7 @@ const ListJokes = () => {
           Jokes
           <br className="max-md:hidden" />
         </h1>
-        <div className="flex items-center">
+        <div className="flex items-end">
           <Button
             display="primary"
             className="mr-6"
@@ -128,7 +159,12 @@ const ListJokes = () => {
           >
             Create Joke
           </Button>
-          <Search value={searchValue} onSearch={onSearch} />
+          <Filter
+            value={filterValue}
+            onFilter={onFilter}
+            setFilterBy={setFilterBy}
+            filterby={filterby}
+          />
 
           <div className="py-3 px-4 ml-3 flex items-center text-sm font-medium leading-none text-gray-600 bg-gray-200 hover:bg-gray-300 cursor-pointer rounded">
             <p>Sort By:</p>
@@ -161,38 +197,48 @@ const ListJokes = () => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {isLoading ? (
+          {(isLoading) ? (
             <TableRow>
               <TableCell colSpan={4}>
                 <Loader />
               </TableCell>
             </TableRow>
           ) : (
-            jokesList.map((joke) => (
-              <TableRow key={joke.id}>
-                <TableCell>
-                  <Link
-                    className="text-cyan-500 underline underline-offset-4"
-                    href={`/${joke.id}`}
-                  >
-                    {joke.Title || joke.title || "-"}
-                  </Link>
-                </TableCell>
-                <TableCell>
-                  {maskEmail(joke.Author || joke.author) || "-"}
-                </TableCell>
-                <TableCell>
-                  {formatShort(joke.CreatedAt || joke.createdAt) || "-"}
-                </TableCell>
-                <TableCell
-                  style={{
-                    color: getViewsColor(joke.Views),
-                  }}
-                >
-                  {joke.Views || "-"}
-                </TableCell>
-              </TableRow>
-            ))
+            <>
+              {jokesList.length ? (
+                jokesList.map((joke) => (
+                  <TableRow key={joke.id}>
+                    <TableCell>
+                      <Link
+                        className="text-cyan-500 underline underline-offset-4"
+                        href={`/${joke.id}`}
+                      >
+                        {joke.Title || "-"}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{maskEmail(joke.Author) || "-"}</TableCell>
+                    <TableCell>{formatShort(joke.CreatedAt) || "-"}</TableCell>
+                    <TableCell
+                      style={{
+                        color: getViewsColor(joke.Views),
+                      }}
+                    >
+                      {joke.Views || "-"}
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={4}>
+                    <div className="flex justify-center py-8">
+                      <h1 className="text-3xl font-extrabold leading-[1.15] text-black dark:text-white">
+                        No jokes to list!
+                      </h1>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
+            </>
           )}
         </TableBody>
       </Table>

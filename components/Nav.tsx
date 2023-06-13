@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 import Button from "./Common/Button/Button";
 import ToggleDarkMode from "./ToggleDarkMode";
@@ -13,18 +12,12 @@ import { useAuthContext } from "@context/AuthProvider";
  * @returns
  */
 const Nav = () => {
-  const router = useRouter();
-
-  const { token, setToken } = useAuthContext();
+  const { token, logout } = useAuthContext();
 
   /**
    * Handle logout
    */
-  const logOut = () => {
-    localStorage.removeItem("token");
-    setToken(null);
-    router.push("/login");
-  };
+  const logOut = () => logout();
 
   return (
     <nav className="flex-between w-full mb-16 pt-3">

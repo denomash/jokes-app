@@ -5,6 +5,8 @@ import { DetailedHTMLProps, HTMLAttributes } from "react";
 /**
  * The properties for the table component.
  */
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface TableBodyProps
-    extends DetailedHTMLProps<HTMLAttributes<HTMLTableSectionElement>, HTMLTableSectionElement> {}
+  extends DetailedHTMLProps<
+    HTMLAttributes<HTMLTableSectionElement>,
+    HTMLTableSectionElement
+  > {}

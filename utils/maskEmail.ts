@@ -4,7 +4,7 @@
  * @returns Masked email
  */
 export const maskEmail = (email = "johndoe@mail.com	") => {
-  const mask = `\*\*\*`;
+  const mask = ` \\ *\\ *\\ * `;
   const [name, domain] = email.split("@");
 
   if (domain) {

@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { makeErrorMessage } from "@utils/makeErrorMessage";
 import { ErrorType } from "@models/ErrorType";
-import api from "@utils/api";
+import { data } from "autoprefixer";
 
 export interface FetchResults<T> {
   isLoading: boolean;
@@ -36,8 +36,9 @@ export default function useFetch<T>(
   } = useQuery<T>(
     name,
     async () => {
-      const res = await api.get(path);
-      return res.data;
+      const res = await fetch(path);
+      const data = await res.json()
+      return data;
     },
     {
       retry: (failureCount, err) => false,

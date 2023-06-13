@@ -1,31 +1,28 @@
-"use client";
+import Cookies from "js-cookie";
 
-import { useEffect, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
 
 const getItem = () => {
-  if (typeof window !== "undefined") {
-    // Perform localStorage action
-    const item = localStorage.getItem("token");
+  const token = Cookies.get("token");
 
-    if (item !== null) {
-      return JSON.parse(item);
-    }
-    return null;
+  if (Boolean(token)) {
+    return token;
   }
-  return null;
+
+  return undefined;
 };
 
 /**
  * Auth hook
  */
-export const useAuthHook = <T>(): [
-  string | null,
-  (val: string | null) => void
+export const useAuthHook = (): [
+  string | undefined,
+  Dispatch<SetStateAction<string | undefined>>
 ] => {
-  const [token, setToken] = useState<string | null>(getItem());
+  const [token, setToken] = useState<string | undefined>(getItem());
 
   useEffect(() => {
-    localStorage.setItem("token", JSON.stringify(token));
+    Cookies.set("token", token ?? "", { expires: 1 });
   }, [token]);
 
   return [token, setToken];

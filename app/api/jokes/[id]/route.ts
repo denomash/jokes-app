@@ -53,8 +53,6 @@ export async function PUT(
 
     let data = await res.json();
 
-    console.log({ data })
-
     return new Response(JSON.stringify({ message: "Update successfull.", ...data }));
   } catch (error) {
     return new Response(JSON.stringify({ message: "An error occured!" }), {
